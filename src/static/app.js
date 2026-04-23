@@ -20,11 +20,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Crear la lista de participantes
+        let participantsHTML = "";
+        if (details.participants && details.participants.length > 0) {
+          participantsHTML = `
+            <div class="participants-section">
+              <strong>Participants:</strong>
+              <ul class="participants-list">
+                ${details.participants.map(p => `
+                  <li>
+                    <span class="participant-name">${p}</span>
+                    <span class="delete-participant" title="Eliminar" data-activity="${name}" data-email="${p}">🗑️</span>
+                  </li>
+                `).join("")}
+              </ul>
+            </div>
+          `;
+        } else {
+          participantsHTML = `
+            <div class="participants-section empty">
+              <strong>Participants:</strong>
+              <span class="no-participants">No participants yet</span>
+            </div>
+          `;
+        }
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          ${participantsHTML}
         `;
 
         activitiesList.appendChild(activityCard);
@@ -40,6 +66,28 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error fetching activities:", error);
     }
   }
+
+  // Delegar evento para eliminar participante SOLO UNA VEZ
+  activitiesList.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("delete-participant")) {
+      const activity = e.target.getAttribute("data-activity");
+      const email = e.target.getAttribute("data-email");
+      if (confirm(`¿Eliminar a ${email} de ${activity}?`)) {
+        try {
+          const response = await fetch(`/activities/${encodeURIComponent(activity)}/participants/${encodeURIComponent(email)}`, {
+            method: "DELETE"
+          });
+          if (response.ok) {
+            fetchActivities(); // Recargar actividades
+          } else {
+            alert("No se pudo eliminar el participante.");
+          }
+        } catch (err) {
+          alert("Error de red al eliminar participante.");
+        }
+      }
+    }
+  });
 
   // Handle form submission
   signupForm.addEventListener("submit", async (event) => {
