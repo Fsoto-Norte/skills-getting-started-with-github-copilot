@@ -77,6 +77,23 @@ activities = {
     }
 }
 
+# Endpoint para eliminar participante de una actividad
+@app.delete("/activities/{activity_name}/participants/{email}")
+def remove_participant(activity_name: str, email: str):
+    """Remove a participant from an activity"""
+    # Validar que la actividad exista
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    activity = activities[activity_name]
+
+    # Validar que el participante esté registrado
+    if email not in activity["participants"]:
+        raise HTTPException(status_code=404, detail="Participant not found in this activity")
+
+    activity["participants"].remove(email)
+    return {"message": f"Removed {email} from {activity_name}"}
+
 
 @app.get("/")
 def root():
